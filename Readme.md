@@ -1,0 +1,1 @@
+Projeto de controle de estoque simples usando o modelo MVC e armazemento em arquivo de texto.
