@@ -213,6 +213,31 @@ class ControllerVenda:
         else:
             return valor_compra
 
+    @classmethod
+    def produtos_mais_vendidos(cls):
+        lista_vendas = DaoVenda.ler()
+        produtos = []
+
+        for i in lista_vendas:
+            nome = i.itensVendido.nome
+            quantidade = i.qteVendida
+            tamanho = list(filter(lambda x: x["produto"] == nome, produtos))
+            
+            if len(tamanho) > 0:
+                produtos = list(map(lambda x: {"produto": nome, "quantidade": x["quantidade"] + quantidade} if (x["produto"] == nome) else (x), produtos))
+            
+            else:
+                produtos.append({"produto": nome, "quantidade": quantidade})
+        
+            produtos_ordened = sorted(produtos, key = lambda k: k["quantidade"], reverse = True)
+            
+            print("Produtos mais vendidos: ")
+            n = 1  
+            for i in produtos:
+                print(f"==========Produto {n}==========")
+                print(f"produto: {i["produto"]} | Quantidade: {i["quantidade"]} \n")
+
+                n += 1
 
 if __name__ == "__main__":
-    ...
+    ControllerVenda.produtos_mais_vendidos()
