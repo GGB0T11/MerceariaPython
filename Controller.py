@@ -89,11 +89,10 @@ class ControllerCategoria:
 
     @classmethod
     def mostrar_categoria(cls):
-        with open("categorias.txt", "r") as arq:
-            lista_categorias = DaoCategoria.ler()
-            
-            for categoria in enumerate(lista_categorias):
-                print(f"{categoria[0] + 1}: {categoria[1].nome}")
+        lista_categorias = DaoCategoria.ler()
+        
+        for categoria in enumerate(lista_categorias):
+            print(f"{categoria[0] + 1}: {categoria[1].nome}")
 
 class ControllerEstoque:
     @classmethod
@@ -240,4 +239,4 @@ class ControllerVenda:
                 n += 1
 
 if __name__ == "__main__":
-    ControllerVenda.produtos_mais_vendidos()
+    ...
