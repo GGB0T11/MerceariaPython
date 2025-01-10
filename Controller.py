@@ -89,20 +89,140 @@ class ControllerCategoria:
 
     @classmethod
     def mostrar_categoria(cls):
+        """
+        Exibe a lista de categorias cadastradas.
+        """
+        # Lê a lista de categorias existentes
         lista_categorias = DaoCategoria.ler()
         
+        # Enumera e imprime cada categoria
         for categoria in enumerate(lista_categorias):
             print(f"{categoria[0] + 1}: {categoria[1].nome}")
 
+class ControllerVenda:
+    @classmethod
+    def cadastrar_venda(cls, item_vendido, qte_vendida, vendedor, comprador):
+        """
+        Cadastra uma venda de um item, atualizando o estoque.
+        """
+        lista_estoque = DaoEstoque.ler()
+        temp = []
+        produto_exist =  False
+        qte_exist = False
+
+        # Verifica se o produto existe no estoque e se a quantidade é suficiente
+        for i in lista_estoque:
+            if produto_exist == False:
+                if i.produto.nome == item_vendido:
+                    produto_exist = True
+                    if i.quantidade >= qte_vendida:
+                        qte_exist = True
+                        i.quantidade = int(i.quantidade) - int(qte_vendida)
+
+                        vendido = Venda(Produto(i.produto.nome, i.produto.preco, i.produto.categoria), qte_vendida, vendedor, comprador)
+                        valor_compra = int(i.produto.preco) * int(qte_vendida)
+
+                        DaoVenda.salvar(vendido)
+            
+            temp.append([Produto(i.produto.nome, i.produto.preco, i.produto.categoria), i.quantidade])
+            
+            # Atualiza o arquivo de estoque
+            arq = open("Registros/estoque.txt", "w")
+            arq.write("")
+
+            for i in temp:
+                with open("Registros/estoque.txt", "a") as arq:
+                    arq.writelines(i[0].nome + ";" + i[0].preco + ";" + i[0].categoria + ";" + str(i[1]))
+                    arq.writelines("\n")
+
+        # Verifica se o produto existe e se a quantidade é suficiente
+        if produto_exist == False:
+            print("O produto não existe")
+            return None
+        
+        elif not qte_exist:
+            print("A quantidade excede o disponível em estoque")
+            return None
+
+        else:
+            return valor_compra
+
+    @classmethod
+    def produtos_mais_vendidos(cls):
+        """
+        Exibe os produtos mais vendidos.
+        """
+        lista_vendas = DaoVenda.ler()
+        produtos = []
+
+        # Agrupa e soma as quantidades vendidas de cada produto
+        for i in lista_vendas:
+            nome = i.itensVendido.nome
+            quantidade = i.qteVendida
+            tamanho = list(filter(lambda x: x["produto"] == nome, produtos))
+            
+            if len(tamanho) > 0:
+                produtos = list(map(lambda x: {"produto": nome, "quantidade": x["quantidade"] + quantidade} if (x["produto"] == nome) else (x), produtos))
+            
+            else:
+                produtos.append({"produto": nome, "quantidade": quantidade})
+        
+        # Ordena os produtos pela quantidade vendida
+        produtos_ordened = sorted(produtos, key = lambda k: k["quantidade"], reverse = True)
+        
+        # Imprime os produtos mais vendidos
+        print("Produtos mais vendidos: ")
+        n = 1  
+        for i in produtos_ordened:
+            print(f"==========Produto {n}==========")
+            print(f"produto: {i['produto']} | Quantidade: {i['quantidade']} \n")
+            n += 1
+
+    @classmethod
+    def mostrar_vendas(cls, data_inicio, data_fim):
+        """
+        Exibe as vendas realizadas em um intervalo de datas.
+        """
+        lista_vendas = DaoVenda.ler()
+        data_inicio = datetime.strptime(data_inicio, "%d/%m/%Y")
+        data_fim = datetime.strptime(data_fim, "%d/%m/%Y")
+
+        # Filtra as vendas pelo intervalo de datas
+        vendas_selecionadas = list(filter(lambda x: datetime.strptime(x.data, "%d/%m/%Y") >= data_inicio and datetime.strptime(x.data, "%d/%m/%Y") <= data_fim, lista_vendas))
+
+        # Imprime as vendas selecionadas
+        n = 1
+        preco_total = 0
+        qte_total = 0
+        for i in vendas_selecionadas:
+            print(f"==========Produto {n}==========") 
+            print(f"Nome: {i.itensVendido.nome} \n"
+                  f"Preço: {i.itensVendido.preco} \n"
+                  f"Categoria: {i.itensVendido.categoria} \n"
+                  f"Quantidade: {i.qteVendida} \n"
+                  f"Vendedor: {i.vendedor} \n"
+                  f"Comprador: {i.comprador} \n"
+                  f"Data: {i.data} \n")
+            
+            n += 1
+            preco_total += float(i.itensVendido.preco)
+            qte_total += int(i.qteVendida)
+
+        print(f"Preço total: {preco_total} | Quantidade total: {qte_total}")
+            
 class ControllerEstoque:
     @classmethod
     def cadastrar_produto(cls, nome, preco, categoria, quantidade):
+        """
+        Cadastra um novo produto no estoque.
+        """
         lista_estoque = DaoEstoque.ler()
         lista_categorias = DaoCategoria.ler()
 
         categoria_exists = list(filter(lambda x: x.nome == categoria, lista_categorias))
         produto_exists = list(filter(lambda x: x.produto.nome == nome, lista_estoque))
 
+        # Verifica se a categoria existe e se o produto já está no estoque
         if len(categoria_exists) > 0:
             if len(produto_exists) == 0:
                 DaoEstoque.salvar(Produto(nome, preco, categoria), quantidade)
@@ -116,37 +236,49 @@ class ControllerEstoque:
 
     @classmethod  
     def remover_produto(cls, remover):
+        """
+        Remove um produto do estoque.
+        """
         lista_estoque = DaoEstoque.ler()
         in_estoque = list(filter(lambda x: x.produto.nome == remover, lista_estoque))
 
+        # Verifica se o produto existe no estoque
         if len(in_estoque) <= 0:
             print("O produto que deseja remover não existe")
 
         else:
+            # Remove o produto do estoque
             for i in range(len(lista_estoque)):
                 if lista_estoque[i].produto.nome == remover:
                     del lista_estoque[i]
                     break
             
+            # Atualiza o arquivo de estoque
             with open("Registros/estoque.txt", "w") as arq:
                 for i in lista_estoque:
                     arq.writelines(i.produto.nome + ";" + i.produto.preco + 
                            ";" + i.produto.categoria + ";" + str(i.quantidade))
                     arq.writelines("\n")
             
-            print("Categoria removida com sucesso")
+            print("Produto removido com sucesso")
 
     @classmethod
-    def alterar_produto(cls,nome_anterior, novo_nome, novo_preco, nova_categoria, nova_quantidade):
+    def alterar_produto(cls, nome_anterior, novo_nome, novo_preco, nova_categoria, nova_quantidade):
+        """
+        Altera os dados de um produto no estoque.
+        """
         lista_estoque = DaoEstoque.ler()
         lista_categorias = DaoCategoria.ler()
         categoria_exists = list(filter(lambda x: x.nome == nova_categoria, lista_categorias))
 
+        # Verifica se a nova categoria existe
         if len(categoria_exists) > 0:
             in_estoque = list(filter(lambda x: x.produto.nome == nome_anterior, lista_estoque))
             if len(in_estoque) > 0:
+                # Altera os dados do produto
                 lista_estoque = list(map(lambda x: Estoque(Produto(novo_nome, novo_preco, nova_categoria), nova_quantidade) if(x.produto.nome == nome_anterior) else(x), lista_estoque))
                 
+                # Atualiza o arquivo de estoque
                 with open("Registros/estoque.txt", "w") as arq:
                     for i in lista_estoque:
                         arq.writelines(i.produto.nome + ";" + i.produto.preco + 
@@ -163,6 +295,9 @@ class ControllerEstoque:
             
     @classmethod
     def mostrar_estoque(cls):
+        """
+        Exibe a lista de produtos no estoque.
+        """
         lista_estoque = DaoEstoque.ler()
         if len(lista_estoque) == 0:
             print("Estoque vazio")
@@ -171,72 +306,48 @@ class ControllerEstoque:
             for i in lista_estoque:
                 print(f"{i.produto.nome}, R$ {i.produto.preco}, {i.produto.categoria}, {i.quantidade} unidades")
 
-class ControllerVenda:
+class ControllerFornecedor:
     @classmethod
-    def cadastrar_venda(cls, item_vendido, qte_vendida, vendedor, comprador):
-        lista_estoque = DaoEstoque.ler()
-        temp = []
-        produto_exist =  False
-        qte_exist = False
-        for i in lista_estoque:
-            if produto_exist == False:
-                if i.produto.nome == item_vendido:
-                    produto_exist = True
-                    if i.quantidade >= qte_vendida:
-                        qte_exist = True
-                        i.quantidade = int(i.quantidade) - int(qte_vendida)
+    def cadastrar_fornecedor(cls, nome, cnpj, telefone, categoria):
+        """
+        Cadastra um novo fornecedor.
+        """
+        lista_fornecedores = DaoFornecedor.ler()
 
-                        vendido = Venda(Produto(i.produto.nome, i.produto.preco, i.produto.categoria), qte_vendida, vendedor, comprador)
-                        valor_compra = int(i.produto.preco) * int(qte_vendida)
+        cnpj_exist = list(filter(lambda x: x.cnpj == cnpj, lista_fornecedores))
+        telefone_exist = list(filter(lambda x: x.telefone == telefone, lista_fornecedores))
 
-                        DaoVenda.salvar(vendido)
-            
-            temp.append([Produto(i.produto.nome, i.produto.preco, i.produto.categoria), i.quantidade])
-            
-            arq = open("Registros/estoque.txt", "w")
-            arq.write("")
+        # Verifica se o CNPJ e o telefone são válidos e se já existem
+        if len(cnpj) == 14 and len(telefone) <= 11 and len(telefone) >= 10:
+            if len(cnpj_exist) <= 0:
+                if len(telefone_exist) <= 0:
+                    DaoFornecedor.salvar(Fornecedor(nome, cnpj, telefone, categoria))
+                    print("Fornecedor cadastrado com sucesso")
 
-            for i in temp:
-                with open("Registros/estoque.txt", "a") as arq:
-                    arq.writelines(i[0].nome + ";" + i[0].preco + ";" + i[0].categoria + ";" + str(i[1]))
-                    arq.writelines("\n")
+                else:
+                    print("Já existe um fornecedor com esse telefone")
 
-        if produto_exist == False:
-            print("O produto não existe")
-            return None
-        
-        elif not qte_exist:
-            print("A quantidade excede o disponível em estoque")
-            return None
-
-        else:
-            return valor_compra
-
-    @classmethod
-    def produtos_mais_vendidos(cls):
-        lista_vendas = DaoVenda.ler()
-        produtos = []
-
-        for i in lista_vendas:
-            nome = i.itensVendido.nome
-            quantidade = i.qteVendida
-            tamanho = list(filter(lambda x: x["produto"] == nome, produtos))
-            
-            if len(tamanho) > 0:
-                produtos = list(map(lambda x: {"produto": nome, "quantidade": x["quantidade"] + quantidade} if (x["produto"] == nome) else (x), produtos))
-            
             else:
-                produtos.append({"produto": nome, "quantidade": quantidade})
+                print("Já existe um fornecedor com esse CNPJ")
         
-            produtos_ordened = sorted(produtos, key = lambda k: k["quantidade"], reverse = True)
-            
-            print("Produtos mais vendidos: ")
-            n = 1  
-            for i in produtos:
-                print(f"==========Produto {n}==========")
-                print(f"produto: {i["produto"]} | Quantidade: {i["quantidade"]} \n")
+        else:
+            print("telefone ou CNPJ inválido")
+    def alterar_fornecedor(cls, nome_anterior, novo_nome, novo_cnpj, novo_telefone, nova_categoria):
+        lista_fornecedores = DaoFornecedor.ler()
+        fornecedor_exist = list(filter(lambda x: x.nome == nome_anterior, lista_fornecedores))
 
-                n += 1
+        if len(fornecedor_exist) > 0:
+            for i in range(len(lista_fornecedores)):
+                if nome_anterior == novo_nome:
+                    lista_fornecedores[i] = Fornecedor(novo_nome, novo_cnpj, novo_telefone ,nova_categoria)
+        
+        else:
+            print("O fornecedor que deseja alterar não existe")
+
+class ControllerCliente:
+    @classmethod
+    def cadastrar_cliente(cls, nome, cpf, telefone, email):
+        ...
 
 if __name__ == "__main__":
     ...

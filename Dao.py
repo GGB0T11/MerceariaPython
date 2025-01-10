@@ -80,7 +80,7 @@ class DaoFornecedor:
         # Salva o fornecedor no arquivo fornecedores.txt
         with open("Registros/fornecedores.txt", "a") as arq:
             arq.writelines(fornecedor.nome + ";" + fornecedor.cnpj + ";" +
-                           fornecedor.telefone + ";" + fornecedor.quantidade)
+                           fornecedor.telefone + ";" + fornecedor.categoria)
             arq.writelines("\n")
             
     @classmethod
@@ -148,14 +148,4 @@ class DaoFuncionario:
     
 # Teste das funções de leitura
 if __name__ == "__main__":
-    print(f"Categoria: {DaoCategoria.ler()}")
-    print("-" * 20)
-    print(f"Venda: {DaoVenda.ler()}")
-    print("-" * 20)
-    print(f"Estoque: {DaoEstoque.ler()}")
-    print("-" * 20)
-    print(f"Fornecedor: {DaoFornecedor.ler()}")
-    print("-" * 20)
-    print(f"Pessoa: {DaoPessoa.ler()}")
-    print("-" * 20)
-    print(f"Funcionário: {DaoFuncionario.ler()}")
+    ...

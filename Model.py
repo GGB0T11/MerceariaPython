@@ -24,11 +24,11 @@ class Venda:
         self.data = data  # Data da venda, padrão é a data atual
 
 class Fornecedor:
-    def __init__(self, nome: str, cnpj: str, telefone: str, quantidade: int):
+    def __init__(self, nome: str, cnpj: str, telefone: str, categoria: str):
         self.nome = nome  # Nome do fornecedor
         self.cnpj = cnpj  # CNPJ do fornecedor
         self.telefone = telefone  # Telefone do fornecedor
-        self.quantidade = quantidade  # Quantidade fornecida
+        self.categoria = categoria  # Categoria fornecida
 
 class Pessoa:
     def __init__(self, nome: str, cpf: str, telefone: str, email: str):
