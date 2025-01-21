@@ -26,14 +26,13 @@ class ControllerCategoria:
 
     @classmethod
     def remover_categoria(cls, remover):
-        #TODO: Remover tbm do estoque, deixar sem categoria
         """
         Remove uma categoria existente.
         """
         # Lê a lista de categorias existentes
         lista_categorias = DaoCategoria.ler()
         in_lista = list(filter(lambda x: x.nome == remover, lista_categorias))
-
+        
         # Verifica se a categoria existe
         if len(in_lista) <= 0:
             print("A categoria que deseja remover não existe")
@@ -50,9 +49,17 @@ class ControllerCategoria:
                 for i in lista_categorias:
                     arq.writelines(i.nome)
                     arq.writelines("\n")
+                    
+            lista_estoque = DaoEstoque.ler()
+            lista_estoque = list(map(lambda x: Estoque(Produto(x.produto.nome, x.produto.preco, "Sem categoria"), x.quantidade) if(x.produto.categoria == remover) else(x), lista_estoque))
+
+            with open("Registros/estoque.txt", "w") as arq:
+                for i in lista_estoque:
+                    arq.writelines(i.produto.nome + ";" + i.produto.preco + ";" + i.produto.categoria + ";" + str(i.quantidade))
+                    arq.writelines("\n")
 
             print("Categoria removida com sucesso")
-
+        
     @classmethod
     def alterar_categoria(cls, categoria_anterior, nova_categoria):
         #TODO: alterar tbm no estoque
@@ -80,6 +87,14 @@ class ControllerCategoria:
                         arq.writelines("\n")
                 
                 print("Categoria alterada com sucesso")
+
+                lista_estoque = DaoEstoque.ler()
+                lista_estoque = list(map(lambda x: Estoque(Produto(x.produto.nome, x.produto.preco, nova_categoria), x.quantidade) if(x.produto.categoria == categoria_anterior) else(x), lista_estoque))
+
+                with open("Registros/estoque.txt", "w") as arq:
+                    for i in lista_estoque:
+                        arq.writelines(i.produto.nome + ";" + i.produto.preco + ";" + i.produto.categoria + ";" + str(i.quantidade))
+                        arq.writelines("\n")
             
             else:
                 print("A categoria que deseja alterar já existe")
@@ -332,6 +347,9 @@ class ControllerFornecedor:
         
         else:
             print("telefone ou CNPJ inválido")
+    
+    @classmethod
+    # Talvez seja uma boa colocar uma verificação onde não se pode ter 2 CNPJ's iguais
     def alterar_fornecedor(cls, nome_anterior, novo_nome, novo_cnpj, novo_telefone, nova_categoria):
         lista_fornecedores = DaoFornecedor.ler()
         fornecedor_exist = list(filter(lambda x: x.nome == nome_anterior, lista_fornecedores))
@@ -340,14 +358,179 @@ class ControllerFornecedor:
             for i in range(len(lista_fornecedores)):
                 if nome_anterior == novo_nome:
                     lista_fornecedores[i] = Fornecedor(novo_nome, novo_cnpj, novo_telefone ,nova_categoria)
-        
+            with open("Registros/fornecedores.txt", "w") as arq:
+                for fornecedor in lista_fornecedores:
+                    arq.writelines(fornecedor.nome + ";" + fornecedor.cnpj + ";" + 
+                                   fornecedor.telefone + ";" + fornecedor.categoria)
+
+
         else:
             print("O fornecedor que deseja alterar não existe")
 
-class ControllerCliente:
     @classmethod
-    def cadastrar_cliente(cls, nome, cpf, telefone, email):
-        ...
+    def remover_fornecedor(cls, remover):
+        lista_fornecedores = DaoFornecedor.ler()
+        fornecedor_exist = list(filter(lambda x: x.cnpj == remover, lista_fornecedores))
 
+        if len(fornecedor_exist) <= 0:
+            print("O fornecedor que deseja remover não existe")
+
+        else:
+            for i in range(len(lista_fornecedores)):
+                if lista_fornecedores[i].cnpj == remover:
+                    del lista_fornecedores[i]
+                    break
+        
+            with open("Registros/fornecedores.txt", "w") as arq:
+                for i in lista_fornecedores:
+                    arq.writelines(i.nome + ";" + i.cnpj + ";" + i.telefone + ";" + i.categoria)
+                    arq.writelines("\n")
+            
+            print("Fornecedor removido com sucesso")
+
+    @classmethod
+    def mostrar_fornecedores(cls):
+        lista_fornecedores = DaoFornecedor.ler()
+        if len(lista_fornecedores) == 0:
+            print("Nenhum fornecedor registrado")
+
+        else:
+            for fornecedor in lista_fornecedores:
+                print(f"Nome: {fornecedor.nome} | CNPJ: {fornecedor.cnpj} | Telefone: {fornecedor.telefone} | Categoria: {fornecedor.categoria}")
+                print("-"*100)
+
+class ControllerPessoa:
+    @classmethod
+    #Talvez valha a pena adicionar uma validacao das informacoes
+    def cadastrar_cliente(cls, nome, cpf, telefone, email):
+        lista_pessoas = DaoPessoa.ler()
+        pessoa_exist = list(filter(lambda x: x.cpf == cpf, lista_pessoas))
+        
+        if len(pessoa_exist) > 0:
+            print("Essa pessoa já está cadastrada")
+
+        else:
+            DaoPessoa.salvar(Pessoa(nome, cpf, telefone, email))
+            print("Cliente cadastrado com sucesso")
+
+    @classmethod
+    def remover_cliente(cls, remover):
+        lista_pessoas = DaoPessoa.ler()
+        pessoa_exist = list(filter(lambda x: x.cpf == remover, lista_pessoas))
+        
+        if len(pessoa_exist) <= 0:
+            print("O cliente que deseja remover não existe")
+
+        else:
+            for i in range(len(lista_pessoas)):
+                if lista_pessoas[i].cpf == remover:
+                    del lista_pessoas[i]
+                    break
+
+            with open("Registros/clientes.txt", "w") as arq:
+                for pessoa in lista_pessoas:
+                    arq.writelines(pessoa.nome + ";" + pessoa.cpf + ";" + 
+                                   pessoa.telefone + ";" + pessoa.email)
+                    arq.writelines("\n")
+    
+    @classmethod
+    def alterar_cliente(cls, cpf_antigo, novo_nome, novo_cpf, novo_telefone, novo_email):
+        lista_pessoas = DaoPessoa.ler()
+        pessoa_exist = list(filter(lambda x: x.cpf == cpf_antigo, lista_pessoas))
+
+        if len(pessoa_exist) > 0:
+            for i in range(len(lista_pessoas)):
+                if lista_pessoas[i].cpf == cpf_antigo:
+                    lista_pessoas[i] = Pessoa(novo_nome, novo_cpf, novo_telefone, novo_email)
+
+            with open("Registros/clientes.txt", "w") as arq:
+                for pessoa in lista_pessoas:
+                    arq.writelines(pessoa.nome + ";" + pessoa.cpf + ";" + 
+                                   pessoa.telefone + ";" + pessoa.email)
+                    arq.writelines("\n")
+
+            print("Cliente alterado com sucesso")
+            
+        else:
+            print("O cliente que deseja alterar não existe")
+
+    @classmethod
+    def mostrar_clientes(cls):
+        lista_pessoas = DaoPessoa.ler()
+        if len(lista_pessoas) == 0:
+            print("Não há nenhum cliente cadastrado ainda")
+
+        else:
+            for pessoa in lista_pessoas:
+                print(f"Nome: {pessoa.nome} | CPF: {pessoa.cpf} | Telefone: {pessoa.telefone} | Email: {pessoa.email}")
+                print("-" * 100)
+
+class ControllerFuncionario:
+    @classmethod
+    def cadastrar_funcionario(cls, nome, cpf, telefone, email, clt):
+        lista_funcionarios = DaoFuncionario.ler()
+        funcionario_exist = list(filter(lambda x: x.clt == clt, lista_funcionarios))
+        
+        if len(funcionario_exist) > 0:
+            print("Funcionário já cadastrado")
+
+        else:
+            DaoFuncionario.salvar(Funcionario(nome, cpf, telefone, email, clt))
+            print("Funcionário salvo com sucesso")
+
+    @classmethod
+    def remover_funcionario(cls, remover):
+        lista_funcionarios = DaoFuncionario.ler()
+        funcionario_exist = list(filter(lambda x: x.cpf == remover, lista_funcionarios))
+        
+        if len(funcionario_exist) > 0:
+            for i in range(len(lista_funcionarios)):
+                if lista_funcionarios[i].cpf == remover:
+                    del lista_funcionarios[i]
+                    break
+            with open("Registros/funcionarios.txt", "w") as arq:
+                for i in lista_funcionarios:
+                    arq.writelines(i.nome + ";" + i.cpf + ";" + i.telefone + ";" + 
+                                   i.email + ";" + i.clt)
+                    arq.writelines("\n")
+            
+            print("Funcionário removido com sucesso")
+
+        else:
+            print("O funcionário que deseja remover não existe")
+
+    @classmethod
+    def alterar_funcionario(cls, cpf_antigo, novo_nome, novo_cpf, novo_telefone, novo_email, novo_clt):
+        lista_funcionarios = DaoFuncionario.ler()
+        funcionario_exist = list(filter(lambda x: x.cpf == cpf_antigo, lista_funcionarios))
+
+        if len(funcionario_exist) > 0:
+            for i in range(len(lista_funcionarios)):
+                if lista_funcionarios[i].cpf == cpf_antigo:
+                    lista_funcionarios[i] = Funcionario(novo_nome, novo_cpf, novo_telefone, novo_email, novo_clt)
+                    break
+
+            with open("Registros/funcionarios.txt", "w") as arq:
+                for i in lista_funcionarios:
+                    arq.writelines(i.nome + ";" + i.cpf + ";" + i.telefone + ";" + 
+                                   i.email + ";" + i.clt)
+                    arq.writelines("\n")
+
+            print("Funcionário alterado com sucesso")
+
+        else:
+            print("O funcionário que deseja alterar não existe")
+
+    @classmethod
+    def mostrar_funcionarios(cls):
+        lista_funcionarios = DaoFuncionario.ler()
+        if len(lista_funcionarios) == 0:
+            print("Não há nenhum cliente cadastrado ainda")
+
+        else:
+            for funcionario in lista_funcionarios:
+                print(f"Nome: {funcionario.nome} | CPF: {funcionario.cpf} | Telefone: {funcionario.telefone} | Email: {funcionario.email} | CLT: {funcionario.clt}")
+                print("-" * 100)
+    
 if __name__ == "__main__":
     ...
